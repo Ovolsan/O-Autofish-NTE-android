@@ -1,17 +1,17 @@
 // === НАСТРОЙКИ ===
 var BAR_X1 = 784,  BAR_Y1 = 75,
-    BAR_X2 = 1577, BAR_Y2 = 112;
+    BAR_X2 = 1577, BAR_Y2 = 112; // шкала индикаторов сверху
 
-var BTN_LEFT_X  = 300,  BTN_LEFT_Y  = 850;
-var BTN_RIGHT_X = 2000, BTN_RIGHT_Y = 850;
-var BTN_CAST_X  = 2145, BTN_CAST_Y  = 948;
+var BTN_LEFT_X  = 300,  BTN_LEFT_Y  = 850; // левая кнопка
+var BTN_RIGHT_X = 2000, BTN_RIGHT_Y = 850; // правая кнопка
+var BTN_CAST_X  = 2145, BTN_CAST_Y  = 948; // закинуть удочку
 
-var GREEN_COLOR  = "#2fd4b4";
-var MARKER_COLOR = "#fef9ac";
+var GREEN_COLOR  = "#2fd4b4"; // цвет бегунка рыбы
+var MARKER_COLOR = "#fef9ac"; // цвет бегунка рыбака
 
 var DEAD_ZONE = 15;
 var LOOP_MS   = 60;
-var TOTAL_CASTS = 99;
+var TOTAL_CASTS = 99; // количесво повторов
 // =================
 
 requestScreenCapture();
