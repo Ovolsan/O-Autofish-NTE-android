@@ -9,8 +9,8 @@ var BTN_CAST_X  = 2145, BTN_CAST_Y  = 948; // закинуть удочку
 var GREEN_COLOR  = "#2fd4b4"; // цвет бегунка рыбы
 var MARKER_COLOR = "#fef9ac"; // цвет бегунка рыбака
 
-var DEAD_ZONE = 15;
-var LOOP_MS   = 60;
+var DEAD_ZONE = 15; // зона допуска в пикселях
+var LOOP_MS   = 60; // делает новый скриншот и проверяет позиции через каждые XX мс
 var TOTAL_CASTS = 99; // количесво повторов
 // =================
 
