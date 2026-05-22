@@ -1,0 +1,88 @@
+// === НАСТРОЙКИ ===
+var BAR_X1 = 784,  BAR_Y1 = 75,
+    BAR_X2 = 1577, BAR_Y2 = 112;
+
+var BTN_LEFT_X  = 300,  BTN_LEFT_Y  = 850;
+var BTN_RIGHT_X = 2000, BTN_RIGHT_Y = 850;
+var BTN_CAST_X  = 2145, BTN_CAST_Y  = 948;
+
+var GREEN_COLOR  = "#2fd4b4";
+var MARKER_COLOR = "#fef9ac";
+
+var DEAD_ZONE = 15;
+var LOOP_MS   = 60;
+var TOTAL_CASTS = 99;
+// =================
+
+requestScreenCapture();
+sleep(1000);
+
+for (var cast = 1; cast <= TOTAL_CASTS; cast++) {
+
+    log("=== Заброс " + cast + " из " + TOTAL_CASTS + " ===");
+
+    // ФАЗА 1: кликаем на закидку каждые 2 сек, пока не появится шкала
+    var barFound = false;
+    while (!barFound) {
+
+        click(BTN_CAST_X, BTN_CAST_Y);
+        sleep(2000);
+
+        var screen = captureScreen();
+        if (screen) {
+            var check = images.findColor(screen, GREEN_COLOR, {
+                region: [BAR_X1, BAR_Y1, BAR_X2 - BAR_X1, BAR_Y2 - BAR_Y1]
+            });
+            screen.recycle();
+
+            if (check !== null) {
+                barFound = true;
+                log("Шкала появилась — начинаю рыбалку!");
+            }
+        }
+    }
+
+    // ФАЗА 2: удерживаем маркер, пока шкала не исчезнет
+    var barVisible = true;
+    while (barVisible) {
+
+        var screen = captureScreen();
+        if (screen) {
+
+            var green = images.findColor(screen, GREEN_COLOR, {
+                region: [BAR_X1, BAR_Y1, BAR_X2 - BAR_X1, BAR_Y2 - BAR_Y1]
+            });
+
+            // Шкала исчезла — рыба поймана или сорвалась
+            if (green === null) {
+                barVisible = false;
+                log("Шкала пропала — заброс завершён!");
+
+            } else {
+
+                var marker = images.findColor(screen, MARKER_COLOR, {
+                    region: [BAR_X1, BAR_Y1, BAR_X2 - BAR_X1, BAR_Y2 - BAR_Y1]
+                });
+
+                if (marker !== null) {
+                    var diff = marker.x - green.x;
+
+                    if (diff > DEAD_ZONE) {
+                        click(BTN_LEFT_X, BTN_LEFT_Y);
+                    } else if (diff < -DEAD_ZONE) {
+                        click(BTN_RIGHT_X, BTN_RIGHT_Y);
+                    }
+                }
+            }
+
+            screen.recycle();
+        }
+
+        sleep(LOOP_MS);
+    }
+
+    // Пауза перед следующим забросом
+    sleep(1500);
+}
+
+log("=== Готово! Все " + TOTAL_CASTS + " забросов завершены ===");
