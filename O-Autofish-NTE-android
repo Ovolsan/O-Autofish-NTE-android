@@ -1,6 +1,6 @@
 // === НАСТРОЙКИ ===
-var BAR_X1 = 784,  BAR_Y1 = 75,
-    BAR_X2 = 1577, BAR_Y2 = 112; // шкала индикаторов сверху
+var BAR_X1 = 784,  BAR_Y1 = 76,
+    BAR_X2 = 1577, BAR_Y2 = 100; // шкала индикаторов сверху
 
 var BTN_LEFT_X  = 300,  BTN_LEFT_Y  = 850; // левая кнопка
 var BTN_RIGHT_X = 2000, BTN_RIGHT_Y = 850; // правая кнопка
@@ -9,13 +9,39 @@ var BTN_CAST_X  = 2145, BTN_CAST_Y  = 948; // закинуть удочку
 var GREEN_COLOR  = "#2fd4b4"; // цвет бегунка рыбы
 var MARKER_COLOR = "#fef9ac"; // цвет бегунка рыбака
 
-var DEAD_ZONE = 15; // зона допуска в пикселях
-var LOOP_MS   = 60; // делает новый скриншот и проверяет позиции через каждые XX мс
+var DEAD_ZONE = 10; // зона допуска в пикселях
+var LOOP_MS   = 50; // делает новый скриншот и проверяет позиции через каждые XX мс
 var TOTAL_CASTS = 99; // количесво повторов
 // =================
 
+var holdThread = null;
+
+function randOffset() {
+    return Math.floor(Math.random() * 11) - 5; // ±5 пикселей
+}
+
+function randClick(x, y) {
+    click(x + randOffset(), y + randOffset());
+}
+
+function holdButton(x, y) {
+    holdThread = threads.start(function() {
+        while (true) {
+            click(x + randOffset(), y + randOffset());
+            sleep(30);
+        }
+    });
+}
+
+function releaseButton() {
+    if (holdThread !== null) {
+        holdThread.interrupt();
+        holdThread = null;
+    }
+}
+
 requestScreenCapture();
-sleep(500);
+sleep(1000);
 
 for (var cast = 1; cast <= TOTAL_CASTS; cast++) {
 
@@ -23,28 +49,36 @@ for (var cast = 1; cast <= TOTAL_CASTS; cast++) {
 
     // ФАЗА 1: кликаем на закидку каждые 2 сек, пока не появится шкала
     var barFound = false;
+
     while (!barFound) {
 
-        click(BTN_CAST_X, BTN_CAST_Y);
-        sleep(1000);
+        randClick(BTN_CAST_X, BTN_CAST_Y);
+        log("Заброс выполнен — жду шкалу...");
 
-        var screen = captureScreen();
-        if (screen) {
-            var check = images.findColor(screen, GREEN_COLOR, {
-                region: [BAR_X1, BAR_Y1, BAR_X2 - BAR_X1, BAR_Y2 - BAR_Y1],
-                threshold: 40
-            });
-            screen.recycle();
+        var searchStart = Date.now();
 
-            if (check !== null) {
-                barFound = true;
-                log("Шкала появилась — начинаю рыбалку!");
+        while (Date.now() - searchStart < 2000) {
+            var screen = captureScreen();
+            if (screen) {
+                var check = images.findColor(screen, GREEN_COLOR, {
+                    region: [BAR_X1, BAR_Y1, BAR_X2 - BAR_X1, BAR_Y2 - BAR_Y1],
+                    threshold: 30
+                });
+                screen.recycle();
+
+                if (check !== null) {
+                    barFound = true;
+                    log("Шкала появилась — начинаю рыбалку!");
+                    break;
+                }
             }
+            sleep(200);
         }
     }
 
     // ФАЗА 2: удерживаем маркер, пока шкала не исчезнет
     var barVisible = true;
+
     while (barVisible) {
 
         var screen = captureScreen();
@@ -52,39 +86,79 @@ for (var cast = 1; cast <= TOTAL_CASTS; cast++) {
 
             var green = images.findColor(screen, GREEN_COLOR, {
                 region: [BAR_X1, BAR_Y1, BAR_X2 - BAR_X1, BAR_Y2 - BAR_Y1],
-                threshold: 40
+                threshold: 30
             });
 
-            // Шкала исчезла — рыба поймана или сорвалась
             if (green === null) {
+                releaseButton();
                 barVisible = false;
                 log("Шкала пропала — заброс завершён!");
+                screen.recycle();
 
             } else {
 
                 var marker = images.findColor(screen, MARKER_COLOR, {
                     region: [BAR_X1, BAR_Y1, BAR_X2 - BAR_X1, BAR_Y2 - BAR_Y1],
-                    threshold: 40
+                    threshold: 30
                 });
+                screen.recycle();
 
                 if (marker !== null) {
                     var diff = marker.x - green.x;
 
                     if (diff > DEAD_ZONE) {
-                        click(BTN_LEFT_X, BTN_LEFT_Y);
+
+                        releaseButton();
+                        holdButton(BTN_LEFT_X, BTN_LEFT_Y);
+
+                        while (diff > DEAD_ZONE) {
+                            var s = captureScreen();
+                            var m = images.findColor(s, MARKER_COLOR, {
+                                region: [BAR_X1, BAR_Y1, BAR_X2 - BAR_X1, BAR_Y2 - BAR_Y1],
+                                threshold: 30
+                            });
+                            var g = images.findColor(s, GREEN_COLOR, {
+                                region: [BAR_X1, BAR_Y1, BAR_X2 - BAR_X1, BAR_Y2 - BAR_Y1],
+                                threshold: 30
+                            });
+                            s.recycle();
+                            if (m === null || g === null) break;
+                            diff = m.x - g.x;
+                            sleep(LOOP_MS);
+                        }
+
+                        releaseButton();
+
                     } else if (diff < -DEAD_ZONE) {
-                        click(BTN_RIGHT_X, BTN_RIGHT_Y);
+
+                        releaseButton();
+                        holdButton(BTN_RIGHT_X, BTN_RIGHT_Y);
+
+                        while (diff < -DEAD_ZONE) {
+                            var s = captureScreen();
+                            var m = images.findColor(s, MARKER_COLOR, {
+                                region: [BAR_X1, BAR_Y1, BAR_X2 - BAR_X1, BAR_Y2 - BAR_Y1],
+                                threshold: 30
+                            });
+                            var g = images.findColor(s, GREEN_COLOR, {
+                                region: [BAR_X1, BAR_Y1, BAR_X2 - BAR_X1, BAR_Y2 - BAR_Y1],
+                                threshold: 30
+                            });
+                            s.recycle();
+                            if (m === null || g === null) break;
+                            diff = m.x - g.x;
+                            sleep(LOOP_MS);
+                        }
+
+                        releaseButton();
                     }
                 }
             }
-
-            screen.recycle();
         }
 
         sleep(LOOP_MS);
     }
 
-    // Пауза перед следующим забросом
     sleep(1500);
 }
 
