@@ -15,7 +15,7 @@ var TOTAL_CASTS = 99; // количесво повторов
 // =================
 
 requestScreenCapture();
-sleep(1000);
+sleep(500);
 
 for (var cast = 1; cast <= TOTAL_CASTS; cast++) {
 
@@ -26,12 +26,13 @@ for (var cast = 1; cast <= TOTAL_CASTS; cast++) {
     while (!barFound) {
 
         click(BTN_CAST_X, BTN_CAST_Y);
-        sleep(2000);
+        sleep(1000);
 
         var screen = captureScreen();
         if (screen) {
             var check = images.findColor(screen, GREEN_COLOR, {
-                region: [BAR_X1, BAR_Y1, BAR_X2 - BAR_X1, BAR_Y2 - BAR_Y1]
+                region: [BAR_X1, BAR_Y1, BAR_X2 - BAR_X1, BAR_Y2 - BAR_Y1],
+                threshold: 40
             });
             screen.recycle();
 
