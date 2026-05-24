@@ -50,7 +50,8 @@ for (var cast = 1; cast <= TOTAL_CASTS; cast++) {
         if (screen) {
 
             var green = images.findColor(screen, GREEN_COLOR, {
-                region: [BAR_X1, BAR_Y1, BAR_X2 - BAR_X1, BAR_Y2 - BAR_Y1]
+                region: [BAR_X1, BAR_Y1, BAR_X2 - BAR_X1, BAR_Y2 - BAR_Y1],
+                threshold: 40
             });
 
             // Шкала исчезла — рыба поймана или сорвалась
@@ -61,7 +62,8 @@ for (var cast = 1; cast <= TOTAL_CASTS; cast++) {
             } else {
 
                 var marker = images.findColor(screen, MARKER_COLOR, {
-                    region: [BAR_X1, BAR_Y1, BAR_X2 - BAR_X1, BAR_Y2 - BAR_Y1]
+                    region: [BAR_X1, BAR_Y1, BAR_X2 - BAR_X1, BAR_Y2 - BAR_Y1],
+                    threshold: 40
                 });
 
                 if (marker !== null) {
